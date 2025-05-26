@@ -53,7 +53,7 @@ void sendWakeOnLan(const uint8_t* mac) {
   for (int i = 0; i < 16; ++i) {
     memcpy(&magicPacket[6 + i * 6], mac, 6);
   }
-  udp.beginPacket(broadcastIP, 9); // Default port for Wake-on-LAN is 9, but some implementations use 7
+  udp.beginPacket(broadcastIP, WOL_PORT);
   udp.write(magicPacket, sizeof(magicPacket));
   udp.endPacket();
 
@@ -112,8 +112,8 @@ void setup() {
   }
   Serial.println("\nWi-Fi connected!");
 
-  // Initialize UDP (port 9 default for WoL)
-  udp.begin(9);
+  // Initialize UDP (using the configured WoL port)
+  udp.begin(WOL_PORT);
 
   // Initialize Bluetooth in dual mode (BLE + Classic)
   esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
@@ -208,7 +208,7 @@ void loop() {
     // ESP_BT_GAP_DISC_STATE_CHANGED_EVT is called when Classic scan stops (but we don't use it here)
     // Then only return to BLE scan after 30s (controlled above)
     // For simplicity, here we just alternate after cooldown
-    if (millis() - lastBleScan > 4000) {
+    if (millis() - lastBleScan > CLASSIC_BLE_SWITCH_TIME) {
       scanningBLE = true;
     }
   }

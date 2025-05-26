@@ -42,4 +42,11 @@
 // Wait time between Wake-on-LAN sends (in milliseconds)
 #define WAKE_COOLDOWN 30000
 
+// Time to switch between BLE and Classic scans (in milliseconds)
+#define CLASSIC_BLE_SWITCH_TIME 4000
+
+// ======== NETWORK SETTINGS ========
+// Wake-on-LAN UDP port (default is 9, some implementations use 7)
+#define WOL_PORT 9
+
 #endif // CONFIG_H

@@ -36,7 +36,6 @@ BLEScan* pBLEScan;
 // Function to send a Wake-on-LAN magic packet
 void sendWakeOnLan(const uint8_t* mac) {
   WiFiUDP udp;
-  const int port = 9; // Default port for Wake-on-LAN is 9, but some implementations use 7
   uint8_t magicPacket[102];
 
   // Build the magic packet
@@ -45,7 +44,7 @@ void sendWakeOnLan(const uint8_t* mac) {
     memcpy(&magicPacket[6 + i * 6], mac, 6);
   }
 
-  udp.beginPacket(broadcastIP, port);
+  udp.beginPacket(broadcastIP, WOL_PORT);
   udp.write(magicPacket, sizeof(magicPacket));
   udp.endPacket();
 
