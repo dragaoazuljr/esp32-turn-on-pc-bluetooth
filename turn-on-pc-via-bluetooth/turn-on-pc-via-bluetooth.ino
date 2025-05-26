@@ -5,12 +5,12 @@
 #include <BLEScan.h>
 #include <WiFiUdp.h>
 
-// Inclui o arquivo de configuração (copie config.example.h para config.h e edite)
-// Se o arquivo config.h não existir, o compilador mostrará um erro
+// Includes the configuration file (copy config.example.h to config.h and edit)
+// If the config.h file doesn't exist, the compiler will show an error
 #include "../config.h"
 
-// ======== CONFIGURAÇÃO DO USUÁRIO ========
-// As configurações agora estão no arquivo config.h
+// ======== USER CONFIGURATION ========
+// Settings are now in the config.h file
 
 // Wi-Fi credentials
 const char* ssid = WIFI_SSID;
@@ -29,14 +29,14 @@ IPAddress broadcastIP(BROADCAST_IP_1, BROADCAST_IP_2, BROADCAST_IP_3, BROADCAST_
 // BLE scan interval (in seconds)
 const int scanInterval = BLE_SCAN_INTERVAL;
 
-// ======== FIM DA CONFIGURAÇÃO DO USUÁRIO ========
+// ======== END OF USER CONFIGURATION ========
 
 BLEScan* pBLEScan;
 
 // Function to send a Wake-on-LAN magic packet
 void sendWakeOnLan(const uint8_t* mac) {
   WiFiUDP udp;
-  const int port = 9; // Porta padrão para Wake-on-LAN é 9, mas algumas implementações usam 7
+  const int port = 9; // Default port for Wake-on-LAN is 9, but some implementations use 7
   uint8_t magicPacket[102];
 
   // Build the magic packet

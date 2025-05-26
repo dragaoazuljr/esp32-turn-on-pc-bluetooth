@@ -10,28 +10,28 @@
 #include "esp_bt_main.h"
 #include "esp_gap_bt_api.h"
 
-// Inclui o arquivo de configuração (copie config.example.h para config.h e edite)
-// Se o arquivo config.h não existir, o compilador mostrará um erro
+// Includes the configuration file (copy config.example.h to config.h and edit)
+// If the config.h file doesn't exist, the compiler will show an error
 #include "../config.h"
 
-// ======== CONFIGURAÇÃO DO USUÁRIO ========
-// As configurações agora estão no arquivo config.h
+// ======== USER CONFIGURATION ========
+// Settings are now in the config.h file
 
 // Wi-Fi credentials
 const char* ssid = WIFI_SSID;
 const char* password = WIFI_PASSWORD;
 
-// ====== LISTA DE MAC AUTORIZADOS ======
+// ====== AUTHORIZED MAC LIST ======
 
-// BLE MACs (em minúsculas, sem maiúsculas!)
+// BLE MACs (lowercase only, no uppercase!)
 const char* allowedBLEMacs[] = ALLOWED_BLE_MACS;
 const int numBLEMacs = sizeof(allowedBLEMacs) / sizeof(allowedBLEMacs[0]);
 
-// Bluetooth Classic MACs autorizados (minúsculas)
+// Authorized Bluetooth Classic MACs (lowercase)
 const char* allowedClassicMacs[] = ALLOWED_CLASSIC_MACS;
 const int numClassicMacs = sizeof(allowedClassicMacs) / sizeof(allowedClassicMacs[0]);
 
-// MAC do PC para Wake-on-LAN
+// PC MAC address for Wake-on-LAN
 const uint8_t pcMacAddress[] = PC_MAC_ADDRESS;
 
 IPAddress broadcastIP(BROADCAST_IP_1, BROADCAST_IP_2, BROADCAST_IP_3, BROADCAST_IP_4);
@@ -39,11 +39,11 @@ WiFiUDP udp;
 
 BLEScan* pBLEScan;
 
-const int bleScanTime = BLE_SCAN_INTERVAL;    // segundos scan BLE
-const int classicScanTime = CLASSIC_SCAN_CYCLES; // ciclos do scan clássico (cada ciclo 1.28s)
+const int bleScanTime = BLE_SCAN_INTERVAL;    // BLE scan seconds
+const int classicScanTime = CLASSIC_SCAN_CYCLES; // classic scan cycles (each cycle 1.28s)
 
 unsigned long lastWakeSent = 0;
-const unsigned long wakeCooldown = WAKE_COOLDOWN; // tempo entre envios
+const unsigned long wakeCooldown = WAKE_COOLDOWN; // time between sends
 
 bool scanningBLE = true;
 
@@ -53,11 +53,11 @@ void sendWakeOnLan(const uint8_t* mac) {
   for (int i = 0; i < 16; ++i) {
     memcpy(&magicPacket[6 + i * 6], mac, 6);
   }
-  udp.beginPacket(broadcastIP, 9); // Porta padrão para Wake-on-LAN é 9, mas algumas implementações usam 7
+  udp.beginPacket(broadcastIP, 9); // Default port for Wake-on-LAN is 9, but some implementations use 7
   udp.write(magicPacket, sizeof(magicPacket));
   udp.endPacket();
 
-  Serial.println("Wake-on-LAN packet enviado!");
+  Serial.println("Wake-on-LAN packet sent!");
 }
 
 bool isAllowedMac(const char* mac, const char* list[], int listSize) {
@@ -69,7 +69,7 @@ bool isAllowedMac(const char* mac, const char* list[], int listSize) {
   return false;
 }
 
-// -------------------- CALLBACK BLUETOOTH CLASSIC --------------------
+// -------------------- BLUETOOTH CLASSIC CALLBACK --------------------
 
 void btGapCallback(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param) {
   if (event == ESP_BT_GAP_DISC_RES_EVT) {
@@ -81,7 +81,7 @@ void btGapCallback(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param) {
 
     if (isAllowedMac(bda_str, allowedClassicMacs, numClassicMacs)) {
       if (millis() - lastWakeSent > wakeCooldown) {
-        Serial.println("[Classic] Dispositivo autorizado detectado! Enviando Wake-on-LAN...");
+        Serial.println("[Classic] Authorized device detected! Sending Wake-on-LAN...");
         sendWakeOnLan(pcMacAddress);
         lastWakeSent = millis();
       }
@@ -89,9 +89,9 @@ void btGapCallback(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param) {
   }
   else if (event == ESP_BT_GAP_DISC_STATE_CHANGED_EVT) {
     if (param->disc_st_chg.state == ESP_BT_GAP_DISCOVERY_STOPPED) {
-      Serial.println("[Classic] Scan parado.");
+      Serial.println("[Classic] Scan stopped.");
     } else if (param->disc_st_chg.state == ESP_BT_GAP_DISCOVERY_STARTED) {
-      Serial.println("[Classic] Scan iniciado.");
+      Serial.println("[Classic] Scan started.");
     }
   }
 }
@@ -102,57 +102,57 @@ void setup() {
   Serial.begin(115200);
   delay(1000);
 
-  // Conectar ao Wi-Fi
+  // Connect to Wi-Fi
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
-  Serial.print("Conectando ao Wi-Fi...");
+  Serial.print("Connecting to Wi-Fi...");
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
-  Serial.println("\nWi-Fi conectado!");
+  Serial.println("\nWi-Fi connected!");
 
-  // Inicializar UDP (porta 9 padrão WoL)
+  // Initialize UDP (port 9 default for WoL)
   udp.begin(9);
 
-  // Inicializar Bluetooth no modo dual (BLE + Classic)
+  // Initialize Bluetooth in dual mode (BLE + Classic)
   esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
   esp_err_t ret;
 
   ret = esp_bt_controller_init(&bt_cfg);
   if (ret != ESP_OK && ret != ESP_ERR_INVALID_STATE) {
-    Serial.printf("Erro ao inicializar controlador BT: %s\n", esp_err_to_name(ret));
+    Serial.printf("Error initializing BT controller: %s\n", esp_err_to_name(ret));
     return;
   }
 
   ret = esp_bt_controller_enable(ESP_BT_MODE_BTDM);
   if (ret != ESP_OK && ret != ESP_ERR_INVALID_STATE) {
-    Serial.printf("Erro ao habilitar controlador BT: %s\n", esp_err_to_name(ret));
+    Serial.printf("Error enabling BT controller: %s\n", esp_err_to_name(ret));
     return;
   }
 
   ret = esp_bluedroid_init();
   if (ret != ESP_OK && ret != ESP_ERR_INVALID_STATE) {
-    Serial.printf("Erro ao inicializar bluedroid: %s\n", esp_err_to_name(ret));
+    Serial.printf("Error initializing bluedroid: %s\n", esp_err_to_name(ret));
     return;
   }
 
   ret = esp_bluedroid_enable();
   if (ret != ESP_OK && ret != ESP_ERR_INVALID_STATE) {
-    Serial.printf("Erro ao habilitar bluedroid: %s\n", esp_err_to_name(ret));
+    Serial.printf("Error enabling bluedroid: %s\n", esp_err_to_name(ret));
     return;
   }
 
-  // Iniciar BLE
+  // Start BLE
   BLEDevice::init("");
   pBLEScan = BLEDevice::getScan();
-  pBLEScan->setActiveScan(true);  // escaneamento ativo para resultados mais rápidos
+  pBLEScan->setActiveScan(true);  // active scanning for faster results
 
-  // Iniciar Bluetooth Classic
+  // Start Bluetooth Classic
   esp_bt_gap_register_callback(btGapCallback);
   esp_bt_gap_start_discovery(ESP_BT_INQ_MODE_GENERAL_INQUIRY, classicScanTime, 0);
 
-  Serial.println("Sistema inicializado: Wi-Fi, BLE e Bluetooth Classic prontos.");
+  Serial.println("System initialized: Wi-Fi, BLE and Bluetooth Classic ready.");
 }
 
 // -------------------- LOOP --------------------
@@ -161,13 +161,13 @@ void loop() {
   static unsigned long lastBleScan = 0;
   static bool bleScanning = false;
 
-  // Controle simples pra fazer scans alternados
+  // Simple control to make alternating scans
   if (scanningBLE && !bleScanning && (millis() - lastBleScan > WAKE_COOLDOWN)) {
-    Serial.println("[BLE] Iniciando scan BLE...");
+    Serial.println("[BLE] Starting BLE scan...");
     BLEScanResults* results = pBLEScan->start(bleScanTime, false);
     bleScanning = true;
 
-    // Processa dispositivos BLE encontrados
+    // Process found BLE devices
     for (int i = 0; i < results->getCount(); i++) {
       BLEAdvertisedDevice d = results->getDevice(i);
       std::string macStr = std::string(d.getAddress().toString().c_str());
@@ -177,7 +177,7 @@ void loop() {
       const char* macCstr = macLower.c_str();
 
       std::string nameStr = std::string(d.getName().c_str());
-      Serial.printf("[BLE] Encontrado: %s", macCstr);
+      Serial.printf("[BLE] Found: %s", macCstr);
       if (!nameStr.empty()) {
         Serial.printf(" (%s)", nameStr.c_str());
       }
@@ -185,7 +185,7 @@ void loop() {
 
       if (isAllowedMac(macCstr, allowedBLEMacs, numBLEMacs)) {
         if (millis() - lastWakeSent > wakeCooldown) {
-          Serial.println("[BLE] Dispositivo autorizado! Enviando Wake-on-LAN...");
+          Serial.println("[BLE] Authorized device! Sending Wake-on-LAN...");
           sendWakeOnLan(pcMacAddress);
           lastWakeSent = millis();
         }
@@ -196,18 +196,18 @@ void loop() {
     lastBleScan = millis();
     bleScanning = false;
 
-    // Após scan BLE, troca para scan Classic
+    // After BLE scan, switch to Classic scan
     scanningBLE = false;
-    // Reinicia scan Classic (se não estiver rodando)
+    // Restart Classic scan (if not running)
     esp_bt_gap_start_discovery(ESP_BT_INQ_MODE_GENERAL_INQUIRY, classicScanTime, 0);
   }
 
-  // O scan Bluetooth Classic roda via callback, só alternamos entre BLE e Classic scans para não travar o dispositivo
+  // The Bluetooth Classic scan runs via callback, we just alternate between BLE and Classic scans to avoid device freezing
   if (!scanningBLE) {
-    // Espera terminar scan Classic antes de voltar para BLE
-    // ESP_BT_GAP_DISC_STATE_CHANGED_EVT é chamado ao parar scan Classic (mas não usamos aqui)
-    // Aí só volta para scan BLE após 30s (controlado acima)
-    // Por simplicidade, aqui só alterna após cooldown
+    // Wait for Classic scan to finish before returning to BLE
+    // ESP_BT_GAP_DISC_STATE_CHANGED_EVT is called when Classic scan stops (but we don't use it here)
+    // Then only return to BLE scan after 30s (controlled above)
+    // For simplicity, here we just alternate after cooldown
     if (millis() - lastBleScan > 4000) {
       scanningBLE = true;
     }
