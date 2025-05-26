@@ -1,0 +1,27 @@
+# Arquivo de configuração com credenciais
+config.h
+
+# Arquivos temporários da IDE do Arduino
+.vscode/
+.pio/
+.pioenvs/
+.piolibdeps/
+.clang_complete
+.gcc-flags.json
+
+# Arquivos de compilação
+*.o
+*.a
+*.elf
+*.bin
+*.map
+*.hex
+
+# Arquivos de backup
+*.bak
+*~
+*.swp
+
+# Outros arquivos específicos do sistema
+.DS_Store
+Thumbs.db
