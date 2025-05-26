@@ -102,6 +102,7 @@ You can use a Bluetooth scanner app on your smartphone or:
 3. Choose which implementation you want to use:
    - `turn-on-pc-via-bluetooth.ino` (BLE only)
    - `turn-on-pc-via-bluetooth-ble-classic.ino` (BLE + Bluetooth Classic)
+   - `turn-on-pc-via-bluetooth-classic-only.ino` (Bluetooth Classic only)
 
 ## Step 5: Upload to ESP32
 

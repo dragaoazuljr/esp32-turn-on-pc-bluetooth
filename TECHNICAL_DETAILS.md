@@ -81,21 +81,73 @@ The implementation carefully manages the alternation between BLE and Bluetooth C
 4. Waits for Bluetooth Classic scan to complete via callbacks
 5. Returns to BLE scan after a delay
 
+### Bluetooth Classic Only Implementation
+
+#### Key Components
+
+1. **Wi-Fi Connection**
+   - Connects to the specified Wi-Fi network to enable UDP packet transmission
+   - Uses `WiFi.h` library for connection management
+   - Implements automatic reconnection if Wi-Fi connection is lost
+
+2. **Bluetooth Classic Initialization**
+   - Uses ESP32's Bluetooth Classic API (`esp_bt.h`, `esp_bt_main.h`, `esp_gap_bt_api.h`)
+   - Initializes controller in Bluetooth Classic mode only (no BLE)
+   - Sets device name to "ESP32-WoL" for easier identification
+
+3. **Continuous Scanning**
+   - Implements automatic restart of scanning when a scan cycle completes
+   - Uses the `ESP_BT_GAP_DISC_STATE_CHANGED_EVT` event to detect when scanning stops
+
+4. **Device Name Retrieval**
+   - Attempts to retrieve and display device names when available
+   - Provides more user-friendly identification of detected devices
+
+5. **Enhanced Logging**
+   - Provides detailed information about detected devices
+   - Logs connection status and authorized device list on startup
+
+#### Bluetooth Classic Callback
+
+The `btGapCallback` function handles Bluetooth Classic discovery events:
+- `ESP_BT_GAP_DISC_RES_EVT`: Processes found devices and checks against authorized list
+- `ESP_BT_GAP_DISC_STATE_CHANGED_EVT`: Automatically restarts scanning when completed
+
+#### Main Loop Flow
+
+1. Monitor Wi-Fi connection status
+2. Reconnect to Wi-Fi if disconnected
+3. Most processing happens in the callback function
+4. Maintain system stability with minimal delay
+
 ## Memory Management
 
-Both implementations include memory management considerations:
-- BLE scan results are cleared after processing to free memory
+All implementations include memory management considerations:
+- BLE scan results are cleared after processing to free memory (in BLE and dual mode implementations)
 - Temporary variables are used efficiently
 - String operations are minimized
+- Buffer sizes are optimized for the ESP32's memory constraints
 
 ## Power Considerations
 
-The dual mode implementation consumes more power due to:
-- Running both BLE and Bluetooth Classic radios
+The power consumption varies between implementations:
+
+### BLE Only Implementation
+- Lowest power consumption
+- Efficient BLE scanning with minimal radio usage
+- Recommended for battery-powered applications
+
+### Dual Mode Implementation
+- Highest power consumption
+- Runs both BLE and Bluetooth Classic radios
 - More frequent scanning operations
 - Additional processing for dual protocol handling
 
-For battery-powered applications, the BLE-only implementation is recommended.
+### Bluetooth Classic Only Implementation
+- Medium power consumption
+- Higher than BLE-only but lower than dual mode
+- Continuous scanning increases power usage
+- More efficient than dual mode for Classic-only devices
 
 ## Security Considerations
 

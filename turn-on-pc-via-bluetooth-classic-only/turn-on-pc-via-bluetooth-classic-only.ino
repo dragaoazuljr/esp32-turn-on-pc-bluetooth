@@ -2,10 +2,6 @@
 #include <WiFiUdp.h>
 #include <esp_wifi.h>
 
-#include <BLEDevice.h>
-#include <BLEUtils.h>
-#include <BLEScan.h>
-
 #include "esp_bt.h"
 #include "esp_bt_main.h"
 #include "esp_gap_bt_api.h"
@@ -23,10 +19,6 @@ const char* password = WIFI_PASSWORD;
 
 // ====== AUTHORIZED MAC LIST ======
 
-// BLE MACs (lowercase only, no uppercase!)
-const char* allowedBLEMacs[] = ALLOWED_BLE_MACS;
-const int numBLEMacs = sizeof(allowedBLEMacs) / sizeof(allowedBLEMacs[0]);
-
 // Authorized Bluetooth Classic MACs (lowercase)
 const char* allowedClassicMacs[] = ALLOWED_CLASSIC_MACS;
 const int numClassicMacs = sizeof(allowedClassicMacs) / sizeof(allowedClassicMacs[0]);
@@ -37,15 +29,8 @@ const uint8_t pcMacAddress[] = PC_MAC_ADDRESS;
 IPAddress broadcastIP(BROADCAST_IP_1, BROADCAST_IP_2, BROADCAST_IP_3, BROADCAST_IP_4);
 WiFiUDP udp;
 
-BLEScan* pBLEScan;
-
-const int bleScanTime = BLE_SCAN_INTERVAL;    // BLE scan seconds
-const int classicScanTime = CLASSIC_SCAN_CYCLES; // classic scan cycles (each cycle 1.28s)
-
 unsigned long lastWakeSent = 0;
 const unsigned long wakeCooldown = WAKE_COOLDOWN; // time between sends
-
-bool scanningBLE = true;
 
 void sendWakeOnLan(const uint8_t* mac) {
   uint8_t magicPacket[102];
@@ -145,76 +130,12 @@ void setup() {
     return;
   }
 
-  // Start BLE
-  BLEDevice::init("");
-  pBLEScan = BLEDevice::getScan();
-  pBLEScan->setActiveScan(true);  // active scanning for faster results
-
-  // Start Bluetooth Classic
-  esp_bt_gap_register_callback(btGapCallback);
-  esp_bt_gap_start_discovery(ESP_BT_INQ_MODE_GENERAL_INQUIRY, classicScanTime, 0);
-
-  Serial.println("System initialized: Wi-Fi, BLE and Bluetooth Classic ready.");
+  Serial.println("System initialized: Wi-Fi, Bluetooth Classic ready.");
 }
 
 // -------------------- LOOP --------------------
 
 void loop() {
-  static unsigned long lastBleScan = 0;
-  static bool bleScanning = false;
-
-  // Simple control to make alternating scans
-  if (scanningBLE && !bleScanning && (millis() - lastBleScan > CLASSIC_BLE_SWITCH_TIME)) {
-    Serial.println("[BLE] Starting BLE scan...");
-    BLEScanResults* results = pBLEScan->start(bleScanTime, false);
-    bleScanning = true;
-
-    // Process found BLE devices
-    for (int i = 0; i < results->getCount(); i++) {
-      BLEAdvertisedDevice d = results->getDevice(i);
-      std::string macStr = std::string(d.getAddress().toString().c_str());
-      std::string macLower;
-      macLower.resize(macStr.size());
-      std::transform(macStr.begin(), macStr.end(), macLower.begin(), ::tolower);
-      const char* macCstr = macLower.c_str();
-
-      std::string nameStr = std::string(d.getName().c_str());
-      // Serial.printf("[BLE] Found: %s", macCstr);
-      // if (!nameStr.empty()) {
-      //   Serial.printf(" (%s)", nameStr.c_str());
-      // }
-      // Serial.println();
-
-      if (isAllowedMac(macCstr, allowedBLEMacs, numBLEMacs)) {
-        if (millis() - lastWakeSent > wakeCooldown) {
-          Serial.println("[BLE] Authorized device! Sending Wake-on-LAN...");
-          sendWakeOnLan(pcMacAddress);
-          lastWakeSent = millis();
-        } else {
-          Serial.println("[BLE] Authorized device! but it is in cooldown...");
-        }
-      }
-    }
-
-    pBLEScan->clearResults();
-    lastBleScan = millis();
-    bleScanning = false;
-    Serial.println("[BLE] Stopping BLE scan...");
-
-    // After BLE scan, switch to Classic scan
-    scanningBLE = false;
-    // Restart Classic scan (if not running)
-    esp_bt_gap_start_discovery(ESP_BT_INQ_MODE_GENERAL_INQUIRY, classicScanTime, 0);
-  }
-
-  // The Bluetooth Classic scan runs via callback, we just alternate between BLE and Classic scans to avoid device freezing
-  if (!scanningBLE) {
-    // Wait for Classic scan to finish before returning to BLE
-    // ESP_BT_GAP_DISC_STATE_CHANGED_EVT is called when Classic scan stops (but we don't use it here)
-    // Then only return to BLE scan after 30s (controlled above)
-    // For simplicity, here we just alternate after cooldown
-    if (millis() - lastBleScan > CLASSIC_BLE_SWITCH_TIME) {
-      scanningBLE = true;
-    }
-  }
+  esp_bt_gap_start_discovery(ESP_BT_INQ_MODE_GENERAL_INQUIRY, 1, 0);
+  delay(2000);
 }

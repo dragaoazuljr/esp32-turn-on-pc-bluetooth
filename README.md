@@ -6,7 +6,7 @@ This project uses an ESP32 microcontroller to automatically send a Wake-on-LAN (
 
 This project allows you to automatically turn on your PC using an ESP32 whenever specific Bluetooth devices come online nearby — perfect for powering your PC with a controller.
 
-The repository provides **two implementations**, each tailored to different Bluetooth protocols:
+The repository provides **three implementations**, each tailored to different Bluetooth protocols:
 
 1. **BLE Only Implementation** (`turn-on-pc-via-bluetooth.ino`)
 
@@ -17,8 +17,15 @@ The repository provides **two implementations**, each tailored to different Blue
 2. **Dual Mode Implementation** (`turn-on-pc-via-bluetooth-ble-classic.ino`)
 
    * Alternates between **BLE and Bluetooth Classic** scanning.
-   * Designed for **wider compatibility**, including **older devices** that don’t support BLE.
+   * Designed for **wider compatibility**, including **older devices** that don't support BLE.
    * Can detect devices like **DualShock 4** or **8bitdo SN30 Pro**, **but only when they are in pairing mode** (i.e., discoverable).
+
+3. **Bluetooth Classic Only Implementation** (`turn-on-pc-via-bluetooth-classic-only.ino`)
+
+   * Uses **Bluetooth Classic** scanning exclusively.
+   * Optimized for **older devices** that only support Bluetooth Classic.
+   * Continuously scans for devices in pairing/discovery mode.
+   * Ideal for users who only need to detect Bluetooth Classic devices.
 
 ---
 
@@ -26,7 +33,7 @@ The repository provides **two implementations**, each tailored to different Blue
 
 Some Bluetooth devices support **BLE** and will continuously broadcast their presence even after being paired with another device. These devices can be detected **immediately upon powering on**, making the BLE-only script ideal.
 
-However, **many older controllers** only support **Bluetooth Classic**, and will only show up during a **short window while they are in pairing mode**. This means the ESP32 can’t detect them unless the device is explicitly put into pairing mode.
+However, **many older controllers** only support **Bluetooth Classic**, and will only show up during a **short window while they are in pairing mode**. This means the ESP32 can't detect them unless the device is explicitly put into pairing mode.
 
 ### ✅ Devices that work well with BLE:
 
@@ -38,7 +45,7 @@ However, **many older controllers** only support **Bluetooth Classic**, and will
 
 * **DualShock 4**
 * **8bitdo SN30 Pro**, older 8bitdo models
-  ➡ Only visible during **pairing mode** — use the **Dual Mode** script.
+  ➡ Only visible during **pairing mode** — use the **Dual Mode** or **Classic Only** script.
 
 ---
 
@@ -49,7 +56,7 @@ You can test using an Android phone:
 1. Open the **Bluetooth menu**.
 2. Power on your device (controller, etc.).
 3. If the device **shows up in the list while already paired or after turning on**, it likely supports BLE.
-4. If it **only appears while in pairing mode**, it’s probably Bluetooth Classic only.
+4. If it **only appears while in pairing mode**, it's probably Bluetooth Classic only.
 
 BLE devices often advertise their presence as connectable, even if already connected to another device.
 
@@ -66,12 +73,12 @@ BLE devices often advertise their presence as connectable, even if already conne
 - Required libraries:
   - WiFi.h
   - WiFiUdp.h
-  - BLEDevice.h
-  - BLEUtils.h
-  - BLEScan.h
-  - esp_bt.h (for dual mode implementation)
-  - esp_bt_main.h (for dual mode implementation)
-  - esp_gap_bt_api.h (for dual mode implementation)
+  - BLEDevice.h (for BLE and dual mode implementations)
+  - BLEUtils.h (for BLE and dual mode implementations)
+  - BLEScan.h (for BLE and dual mode implementations)
+  - esp_bt.h (for dual mode and Classic only implementations)
+  - esp_bt_main.h (for dual mode and Classic only implementations)
+  - esp_gap_bt_api.h (for dual mode and Classic only implementations)
 
 ## Implementation Details
 
@@ -95,6 +102,17 @@ Key features:
 - Uses callbacks for Bluetooth Classic device detection
 - Implements a cooldown period to prevent multiple wake signals
 - Provides more detailed logging
+
+### Bluetooth Classic Only Implementation (`turn-on-pc-via-bluetooth-classic-only.ino`)
+
+This implementation focuses exclusively on Bluetooth Classic devices, optimized for older controllers and peripherals.
+
+Key features:
+- Uses only Bluetooth Classic scanning (no BLE)
+- Continuously restarts scanning when completed
+- Attempts to retrieve device names when available
+- Implements automatic Wi-Fi reconnection
+- Provides detailed logging of detected devices
 
 ## Configuration
 
@@ -127,7 +145,7 @@ This project uses a separate configuration file to keep sensitive information ou
      "yy:yy:yy:yy:yy:yy"  /* Another device */ \
    }
    
-   // Authorized Bluetooth Classic devices (for dual mode implementation)
+   // Authorized Bluetooth Classic devices (for dual mode and Classic only implementations)
    #define ALLOWED_CLASSIC_MACS { \
      "xx:xx:xx:xx:xx:xx", /* Device name */ \
      "yy:yy:yy:yy:yy:yy"  /* Another device */ \
