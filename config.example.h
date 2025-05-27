@@ -49,4 +49,6 @@
 // Wake-on-LAN UDP port (default is 9, some implementations use 7)
 #define WOL_PORT 9
 
+#define LED_PIN 2  // Pino do LED onboard
+
 #endif // CONFIG_H

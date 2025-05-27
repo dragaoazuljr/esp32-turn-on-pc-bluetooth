@@ -12,6 +12,13 @@
 // ======== USER CONFIGURATION ========
 // Settings are now in the config.h file
 
+enum LedStatus {
+  OFF,
+  GREEN,
+  YELLOW,
+  RED
+};
+
 // Wi-Fi credentials
 const char* ssid = WIFI_SSID;
 const char* password = WIFI_PASSWORD;
@@ -51,6 +58,36 @@ void sendWakeOnLan(const uint8_t* mac) {
   Serial.println("Wake-on-LAN packet sent to PC!");
 }
 
+void setLedStatus(LedStatus status) {
+  switch (status) {
+    case OFF:
+      digitalWrite(LED_PIN, LOW);
+      break;
+    case GREEN:
+      digitalWrite(LED_PIN, HIGH); // LED acende (verde simbólico)
+      break;
+    case YELLOW:
+      {
+        unsigned long cooldownStart = millis();
+        while (millis() - cooldownStart < WAKE_COOLDOWN) {
+          digitalWrite(LED_PIN, HIGH);
+          delay(300);
+          digitalWrite(LED_PIN, LOW);
+          delay(300);
+        }
+      }
+      break;
+    case RED:
+      for (int i = 0; i < 6; i++) {
+        digitalWrite(LED_PIN, HIGH);
+        delay(100);
+        digitalWrite(LED_PIN, LOW);
+        delay(100);
+      }
+      break;
+  }
+}
+
 // Check if the scanned BLE MAC is in the allowed list
 bool isAllowedBLE(const std::string& mac) {
   for (int i = 0; i < numBLEMacs; ++i) {
@@ -65,13 +102,23 @@ void setup() {
   Serial.begin(115200);
   delay(1000);
 
+  pinMode(LED_PIN, OUTPUT);
+  setLedStatus(OFF);
+
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
 
   Serial.print("Connecting to Wi-Fi...");
+  int wifi_attempts = 0;
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
+    wifi_attempts++;
+    if (wifi_attempts > 20) {
+      Serial.println("\nFailed to connect to Wi-Fi!");
+      setLedStatus(RED);
+      return;
+    }
   }
   Serial.println("\nWi-Fi connected!");
 
@@ -82,6 +129,7 @@ void setup() {
 }
 
 void loop() {
+  setLedStatus(OFF);
   Serial.println("Scanning for BLE devices...");
 
   // get pointer instead of object
@@ -105,8 +153,9 @@ void loop() {
 
     if (isAllowedBLE(mac)) {
       Serial.println("Authorized BLE device detected. Sending Wake-on-LAN...");
+      setLedStatus(GREEN);
       sendWakeOnLan(pcMacAddress);
-      delay(WAKE_COOLDOWN);  // Wait before scanning again to avoid repeat triggers
+      setLedStatus(YELLOW); // Wait before scanning again to avoid repeat triggers
       break;
     }
   }
