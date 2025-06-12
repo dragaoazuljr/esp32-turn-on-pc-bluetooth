@@ -225,17 +225,15 @@ Para configurar a implementação Raspberry Pi:
 8. Faça upload do sketch para o ESP32
 
 ### Implementação Raspberry Pi
-1. Instale o Raspberry Pi OS (ou sua distribuição Linux preferida)
+1. Instale o Raspberry Pi OS Lite (ou sua distribuição Linux preferida)
 2. Instale os pacotes necessários:
    ```bash
-   sudo apt-get update
-   sudo apt-get install bluez wakeonlan
+   sudo apt update && sudo apt upgrade -y
+   sudo apt install -y bluez bluez-hcidump bluetooth
    ```
-3. Clone ou baixe este repositório
-4. Execute o script de configuração:
+3. Execute o script de configuração diretamente do repositório:
    ```bash
-   cd turn-on-pc-via-bluetooth-raspberry-pi
-   sudo ./setup_monitor_service.sh
+   bash <(curl -fsSL https://raw.githubusercontent.com/dragaoazuljr/esp32-turn-on-pc-bluetooth/master/turn-on-pc-via-bluetooth-raspberry-pi/setup_monitor_service.sh)
    ```
 
 ## Uso
