@@ -81,7 +81,7 @@ Dispositivos BLE frequentemente anunciam sua presença como conectável, mesmo s
 - PC com Wake-on-LAN habilitado na BIOS/UEFI
 
 ### Implementação Raspberry Pi
-- Raspberry Pi (qualquer modelo com Bluetooth)
+- Raspberry Pi Zero 2 W (recomendado) ou qualquer outro modelo de Raspberry Pi com Bluetooth
 - Fonte de alimentação para o Raspberry Pi
 - PC com Wake-on-LAN habilitado na BIOS/UEFI
 

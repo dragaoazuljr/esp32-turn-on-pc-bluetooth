@@ -81,7 +81,7 @@ BLE devices often advertise their presence as connectable, even if already conne
 - PC with Wake-on-LAN capability enabled in BIOS/UEFI
 
 ### Raspberry Pi Implementation
-- Raspberry Pi (any model with Bluetooth)
+- Raspberry Pi Zero 2 W (recommended) or any other Raspberry Pi model with Bluetooth
 - Power supply for the Raspberry Pi
 - PC with Wake-on-LAN capability enabled in BIOS/UEFI
 
