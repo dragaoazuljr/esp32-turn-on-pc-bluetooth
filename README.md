@@ -6,7 +6,7 @@ This project uses an ESP32 microcontroller to automatically send a Wake-on-LAN (
 
 This project allows you to automatically turn on your PC using an ESP32 whenever specific Bluetooth devices come online nearby — perfect for powering your PC with a controller.
 
-The repository provides **three implementations**, each tailored to different Bluetooth protocols:
+The repository provides **four implementations**, each tailored to different Bluetooth protocols and hardware:
 
 1. **BLE Only Implementation** (`turn-on-pc-via-bluetooth.ino`)
 
@@ -26,6 +26,17 @@ The repository provides **three implementations**, each tailored to different Bl
    * Optimized for **older devices** that only support Bluetooth Classic.
    * Continuously scans for devices in pairing/discovery mode.
    * Ideal for users who only need to detect Bluetooth Classic devices.
+
+4. **Raspberry Pi Implementation** (`turn-on-pc-via-bluetooth-raspberry-pi/`)
+
+   * Uses **Raspberry Pi** with Linux for enhanced Bluetooth detection.
+   * Implements **multiple detection methods**:
+     - `hcitool inq` for Bluetooth Classic devices
+     - `hcidump` for monitoring Bluetooth traffic
+     - `hcitool lescan` for BLE devices
+   * **Best solution for Bluetooth Classic devices** that don't work with ESP32 outside discovery mode.
+   * Can detect devices like **DualShock 4** even when not in pairing mode.
+   * More robust and flexible, but requires more power and setup.
 
 ---
 
@@ -47,6 +58,8 @@ However, **many older controllers** only support **Bluetooth Classic**, and will
 * **8bitdo SN30 Pro**, older 8bitdo models
   ➡ Only visible during **pairing mode** — use the **Dual Mode** or **Classic Only** script.
 
+> **Important Note**: When using the ESP32 implementation, Bluetooth Classic devices can only be detected when they are in pairing mode (pairable). However, the Raspberry Pi implementation can detect these devices both when they are in pairing mode AND when they are normally powered on. This makes the Raspberry Pi solution more convenient for daily use with controllers like the DualShock 4.
+
 ---
 
 ### 🔍 How to know if your device supports BLE?
@@ -62,12 +75,19 @@ BLE devices often advertise their presence as connectable, even if already conne
 
 ## Hardware Requirements
 
+### ESP32 Implementation
 - ESP32 development board (ESP32-WROOM, ESP32-WROVER, or similar)
 - Power supply for the ESP32 (USB or external)
 - PC with Wake-on-LAN capability enabled in BIOS/UEFI
 
+### Raspberry Pi Implementation
+- Raspberry Pi (any model with Bluetooth)
+- Power supply for the Raspberry Pi
+- PC with Wake-on-LAN capability enabled in BIOS/UEFI
+
 ## Software Requirements
 
+### ESP32 Implementation
 - Arduino IDE
 - ESP32 board support package for Arduino
 - Required libraries:
@@ -79,6 +99,12 @@ BLE devices often advertise their presence as connectable, even if already conne
   - esp_bt.h (for dual mode and Classic only implementations)
   - esp_bt_main.h (for dual mode and Classic only implementations)
   - esp_gap_bt_api.h (for dual mode and Classic only implementations)
+
+### Raspberry Pi Implementation
+- Raspberry Pi OS (or any Linux distribution)
+- Required packages:
+  - bluez (for Bluetooth tools)
+  - wakeonlan (for WoL packets)
 
 ## Implementation Details
 
@@ -114,8 +140,23 @@ Key features:
 - Implements automatic Wi-Fi reconnection
 - Provides detailed logging of detected devices
 
+### Raspberry Pi Implementation (`turn-on-pc-via-bluetooth-raspberry-pi/`)
+
+This implementation uses a Raspberry Pi to provide enhanced Bluetooth detection capabilities, especially for Bluetooth Classic devices.
+
+Key features:
+- Multiple detection methods:
+  - `hcitool inq` for Bluetooth Classic devices
+  - `hcidump` for monitoring Bluetooth traffic
+  - `hcitool lescan` for BLE devices
+- Systemd service for automatic startup and management
+- Configurable cooldown period
+- Support for multiple authorized devices
+- Robust error handling and automatic restart
+
 ## Configuration
 
+### ESP32 Implementation
 This project uses a separate configuration file to keep sensitive information out of version control. To configure the project:
 
 1. **Copy the example configuration file**
@@ -157,10 +198,23 @@ This project uses a separate configuration file to keep sensitive information ou
    #define WAKE_COOLDOWN 30000
    ```
 
-> **Note**: The `config.h` file is excluded from version control via `.gitignore` to prevent accidentally committing sensitive information.
+### Raspberry Pi Implementation
+To configure the Raspberry Pi implementation:
+
+1. **Run the setup script**
+   ```bash
+   cd turn-on-pc-via-bluetooth-raspberry-pi
+   sudo ./setup_monitor_service.sh
+   ```
+
+2. **Follow the prompts** to:
+   - Enter MAC addresses of authorized Bluetooth devices
+   - Enter the MAC address of the target PC
+   - The script will automatically configure and start the service
 
 ## Installation
 
+### ESP32 Implementation
 1. Install the Arduino IDE and ESP32 board support
 2. Install required libraries through the Arduino Library Manager
 3. Clone or download this repository
@@ -170,19 +224,40 @@ This project uses a separate configuration file to keep sensitive information ou
 7. Select the correct board and port in Arduino IDE
 8. Upload the sketch to your ESP32
 
+### Raspberry Pi Implementation
+1. Install Raspberry Pi OS (or your preferred Linux distribution)
+2. Install required packages:
+   ```bash
+   sudo apt-get update
+   sudo apt-get install bluez wakeonlan
+   ```
+3. Clone or download this repository
+4. Run the setup script:
+   ```bash
+   cd turn-on-pc-via-bluetooth-raspberry-pi
+   sudo ./setup_monitor_service.sh
+   ```
+
 ## Usage
 
 1. Ensure your PC has Wake-on-LAN enabled in BIOS/UEFI settings
-2. Power the ESP32 (can be connected to a USB power adapter)
-3. Place the ESP32 within range of your Bluetooth devices
-4. When you turn on an authorized Bluetooth device, the ESP32 will detect it and send a Wake-on-LAN packet to your PC
+2. Power the ESP32/Raspberry Pi
+3. Place the device within range of your Bluetooth devices
+4. When you turn on an authorized Bluetooth device, it will detect it and send a Wake-on-LAN packet to your PC
 
 ## Troubleshooting
 
+### ESP32 Implementation
 - **ESP32 not detecting devices**: Ensure the MAC addresses are correctly entered and in lowercase
 - **PC not turning on**: Verify Wake-on-LAN is properly configured in your PC's BIOS/UEFI and network adapter settings
 - **Connection issues**: Check Wi-Fi credentials and ensure the ESP32 is connected to the network
 - **Multiple wake signals**: Adjust the cooldown period if needed
+
+### Raspberry Pi Implementation
+- **Device not detected**: Run `hcidump -X` to monitor Bluetooth traffic and identify the correct MAC address
+- **DualShock 4 specific**: The controller may use different MAC addresses when turning on. Add both MACs to the authorized list
+- **Service not starting**: Check status with `sudo systemctl status monitorbt.service`
+- **Permission issues**: Ensure the script has execute permissions (`chmod +x setup_monitor_service.sh`)
 
 ### 🛠️ Common Upload Issues
 

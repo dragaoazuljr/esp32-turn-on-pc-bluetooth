@@ -57,6 +57,7 @@ Total packet size: 102 bytes
    - Uses ESP32's Bluetooth Classic API (`esp_bt.h`, `esp_bt_main.h`, `esp_gap_bt_api.h`)
    - Implements callback function for device discovery events
    - Maintains separate list of authorized Bluetooth Classic devices
+   - **Limitation**: Can only detect devices when they are in pairing mode (pairable)
 
 2. **Dual Mode Controller Configuration**
    - Initializes Bluetooth controller in dual mode (BLE + Classic)
@@ -120,6 +121,124 @@ The `btGapCallback` function handles Bluetooth Classic discovery events:
 3. Most processing happens in the callback function
 4. Maintain system stability with minimal delay
 
+### Raspberry Pi Implementation
+
+#### Key Components
+
+1. **Multiple Detection Methods**
+   - **hcitool inq**: Bluetooth Classic device discovery
+     - Uses `hcitool inq` command for device scanning
+     - Scans for 10 seconds with flush option
+     - Detects devices in inquiry mode
+   
+   - **hcidump**: Bluetooth traffic monitoring
+     - Uses `hcidump -X` for raw packet capture
+     - Monitors all Bluetooth traffic
+     - **Key Advantage**: Can detect devices even when not in discovery mode
+     - This is the main difference from the ESP32 implementation
+     - Makes it possible to detect controllers like DualShock 4 during normal operation
+   
+   - **hcitool lescan**: BLE device discovery
+     - Uses `hcitool lescan` for BLE device scanning
+     - Detects BLE devices and their advertisements
+     - Useful for modern controllers with BLE support
+
+2. **Process Management**
+   - Runs each detection method in separate processes
+   - Uses file-based IPC (`/tmp/controle_detectado.tmp`)
+   - Implements proper process cleanup on exit
+   - Handles process termination gracefully
+
+3. **Systemd Service Integration**
+   - Runs as a systemd service for automatic startup
+   - Implements proper service dependencies
+   - Handles service restart and recovery
+   - Provides system logging integration
+
+4. **Cooldown Mechanism**
+   - Implements configurable cooldown period (default: 120 seconds)
+   - Prevents multiple wake signals
+   - Uses file-based state tracking
+   - Handles edge cases and race conditions
+
+#### Detection Process Flow
+
+1. **hcitool inq Process**
+   ```
+   while true:
+     execute hcitool inq
+     check results against authorized MACs
+     if match found:
+       write MAC to detection file
+       wait for cooldown
+     sleep 2 seconds
+   ```
+
+2. **hcidump Process**
+   ```
+   while true:
+     monitor hcidump output
+     for each line:
+       check against authorized MACs
+       if match found:
+         write MAC to detection file
+         wait for cooldown
+   ```
+
+3. **hcitool lescan Process**
+   ```
+   while true:
+     execute hcitool lescan
+     check results against authorized MACs
+     if match found:
+       write MAC to detection file
+       wait for cooldown
+     sleep 2 seconds
+   ```
+
+4. **Main Process**
+   ```
+   while true:
+     check detection file
+     if file exists:
+       read MAC
+       send WoL packet
+       remove detection file
+       wait for cooldown
+     sleep 1 second
+   ```
+
+#### Special Considerations
+
+1. **DualShock 4 Handling**
+   - The DualShock 4 controller may use different MAC addresses:
+     - One MAC when in pairing mode
+     - Another MAC when normally powered on
+   - Solution: Add both MACs to the authorized list
+   - Use `hcidump -X` to identify both MACs
+   - **Key Advantage**: The Raspberry Pi implementation can detect the controller in both states:
+     - When it's in pairing mode (using hcitool inq)
+     - When it's normally powered on (using hcidump)
+
+2. **Bluetooth Classic Device Detection**
+   - Some devices only broadcast in discovery mode
+   - Others maintain constant presence
+   - Multiple detection methods increase chances of detection
+   - `hcidump` can catch devices even when not in discovery mode
+   - This is a significant advantage over the ESP32 implementation, which can only detect devices in pairing mode
+
+3. **Performance Optimization**
+   - Each detection method runs in parallel
+   - File-based IPC minimizes overhead
+   - Cooldown period prevents excessive scanning
+   - Process management ensures resource cleanup
+
+4. **Error Handling**
+   - Automatic service restart on failure
+   - Process monitoring and recovery
+   - Logging of all significant events
+   - Graceful handling of device disconnections
+
 ## Memory Management
 
 All implementations include memory management considerations:
@@ -148,6 +267,13 @@ The power consumption varies between implementations:
 - Higher than BLE-only but lower than dual mode
 - Continuous scanning increases power usage
 - More efficient than dual mode for Classic-only devices
+
+### Raspberry Pi Implementation
+- Highest power consumption among all implementations
+- Runs multiple detection processes
+- Continuous monitoring of Bluetooth traffic
+- Requires stable power supply
+- Not suitable for battery operation
 
 ## Security Considerations
 
